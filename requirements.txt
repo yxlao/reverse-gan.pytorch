@@ -1,0 +1,8 @@
+ipdb
+jupyter
+requests
+tqdm
+scipy
+tensorflow-gpu
+scikit-image
+scikit-learn
