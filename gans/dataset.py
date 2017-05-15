@@ -1,10 +1,11 @@
 import csv
 import os
+
 import numpy as np
-from sklearn.utils import shuffle
 import skimage
 import skimage.data
 import skimage.transform
+from sklearn.utils import shuffle
 
 
 class DataIter(object):
@@ -37,10 +38,18 @@ class DataIter(object):
 
 
 class NDArrayIter(DataIter):
-    def __init__(self, data, labels, batch_size=1, to_one_hot=False,
-                 loop_over_batch=False, shuffle_data=True,
-                 data_dtype=np.float32, labels_dtype=np.int32):
+    def __init__(self,
+                 data,
+                 labels,
+                 batch_size=1,
+                 to_one_hot=False,
+                 num_classes=None,
+                 loop_over_batch=False,
+                 shuffle_data=True,
+                 data_dtype=np.float32,
+                 labels_dtype=np.int32):
         """Numpy ndarray iterator.
+
         Args:
             data: Assume NHWC layout, for other layouts, assume N (num_samples)
                   is in the first dimension.
@@ -52,13 +61,13 @@ class NDArrayIter(DataIter):
                         -1, then use all data (no batch).
             to_one_hot: Convert to one_hot if original dataset is not one-hot
                         encoded.
+            num_classes: Number of classes, needed if to_one_hot is true.
             loop_over_batch: Loop-over last batch to contain data from beginning
                              to make sure all batch will have size batch_size.
             data_dtype: Returned datase dtype.
             labels_dtype: Returned labels dtype.
+
         TODO: Support loop-over batch to solve last batch smaller problem.
-        TODO: Implement to_one_hot. Currently this can be covered from TF's
-              tf.one_hot()
         """
         super(NDArrayIter, self).__init__()
 
@@ -67,19 +76,42 @@ class NDArrayIter(DataIter):
             raise ValueError("Error: len(data) == 0.")
         if len(data) != len(labels):
             raise ValueError("Error: len(data) != len(labels).")
-        if to_one_hot:
-            raise NotImplementedError("To one-hot not implemented.")
-        elif np.array(labels).ndim != 1:
-            raise ValueError("labels must be of shape (num_samples, ).")
         if loop_over_batch:
             raise NotImplementedError("Loop over batch not implemented.")
 
         # Set dataset info
         self.num_samples = len(data)
+        self.num_classes = num_classes
+
+        # Data
+        self.data = np.array(data).astype(data_dtype)
+
+        # Labels
+        ndim_labels = np.ndim(labels)
+        if to_one_hot:
+            # Convert labels to one-hot if necessary
+            if num_classes is None:
+                raise ValueError("When to_one_hot=True, num_classes can not be"
+                                 "None.")
+            if ndim_labels == 1 or ndim_labels == 2 and labels.shape[1] == 1:
+                # Convert to one-hot
+                self.labels = np.zeros((self.num_samples, self.num_classes))
+                self.labels[np.arange(self.num_samples), labels] = 1
+            elif ndim_labels == 2:
+                # Already one-hot, do a sanity check
+                if not labels.shape[1] == self.num_classes:
+                    raise ValueError("labels.shape[1]: {}, shall equal to "
+                                     "num_classes: {}".format(
+                        labels.shape[1], self.num_classes))
+                self.labels = labels
+            else:
+                raise ValueError("ndim(labels): {} > 3".format(np.ndim(labels)))
+        else:
+            # No not perform any operation on labels
+            self.labels = labels
+        self.labels = np.array(self.labels).astype(labels_dtype)
 
         # Set parameters
-        self.data = np.array(data).astype(data_dtype)
-        self.labels = np.array(labels).astype(labels_dtype)
         self.to_one_hot = to_one_hot
         self.loop_over_batch = loop_over_batch
         self.shuffle_data = shuffle_data
@@ -108,12 +140,75 @@ class NDArrayIter(DataIter):
         self.start_idx = 0
 
 
+class MnistDataIter(NDArrayIter):
+    def __init__(self,
+                 root_dir,
+                 dataset,
+                 batch_size=1,
+                 to_one_hot=True,
+                 loop_over_batch=False,
+                 shuffle_data=True,
+                 data_dtype=np.float32,
+                 labels_dtype=np.int32):
+        """Mnist Data Iterator
+
+        Example usage:
+            mnist = MnistDataIter(data_root, 'train', batch_size=128)
+            data, labels = mnist.next()
+        """
+
+        def load_train(root_dir):
+            with open(os.path.join(root_dir, 'train-images-idx3-ubyte')) as f:
+                data = np.fromfile(file=f, dtype=np.uint8)
+                data = data[16:].reshape((60000, 28, 28, 1))
+            with open(os.path.join(root_dir, 'train-labels-idx1-ubyte')) as f:
+                labels = np.fromfile(file=f, dtype=np.uint8)
+                labels = labels[8:].reshape((60000))
+            return data, labels
+
+        def load_test(root_dir):
+            with open(os.path.join(root_dir, 't10k-images-idx3-ubyte')) as f:
+                data = np.fromfile(file=f, dtype=np.uint8)
+                data = data[16:].reshape((10000, 28, 28, 1))
+            with open(os.path.join(root_dir, 't10k-labels-idx1-ubyte')) as f:
+                labels = np.fromfile(file=f, dtype=np.uint8)
+                labels = labels[8:].reshape((10000))
+            return data, labels
+
+        # read from mnist file
+        if dataset == 'train':
+            data, labels = load_train(root_dir)
+        elif dataset == 'test':
+            data, labels = load_test(root_dir)
+        elif dataset == 'all':
+            train_data, train_labels = load_train(root_dir)
+            test_data, test_labels = load_test(root_dir)
+            data = np.concatenate((train_data, test_data), axis=0)
+            labels = np.concatenate((train_labels, test_labels), axis=0)
+        else:
+            raise ValueError("dataset must be 'train' or 'test'")
+
+        # scale 255. to 1.
+        data = data / 255.
+
+        super(MnistDataIter, self).__init__(data,
+                                            labels,
+                                            batch_size=batch_size,
+                                            to_one_hot=to_one_hot,
+                                            num_classes=10,
+                                            loop_over_batch=loop_over_batch,
+                                            shuffle_data=shuffle_data,
+                                            data_dtype=data_dtype,
+                                            labels_dtype=labels_dtype)
+
+
 class FixedShapeImageIter(DataIter):
     def __init__(self, file_list, im_path, width, height, channel,
                  batch_size=1, to_one_hot=False,
                  loop_over_batch=False, shuffle_data=True,
                  data_dtype=np.float32, labels_dtype=np.int32):
-        """Image ndarray iterator.
+        """Image ndarray iterator
+
         Args:
             file_list: Contains image_path,label, one sample for line. e.g.
                        image_file_foo.jpg, 1
@@ -133,6 +228,7 @@ class FixedShapeImageIter(DataIter):
                              to make sure all batch will have size batch_size.
             data_dtype: Returned datase dtype.
             labels_dtype: Returned labels dtype.
+
         TODO: Currently just call NDArrayIter (storing all image in memory),
               needs to load image dynamically later.
         """
@@ -187,6 +283,7 @@ class FixedShapeImageIter(DataIter):
 
 
 if __name__ == '__main__':
+    # Test NDArrayIter
     xs = np.random.rand(1000, 32, 32, 3)
     ys = np.random.randint(0, 10, 1000)
     batch_size = 128
@@ -213,3 +310,10 @@ if __name__ == '__main__':
     # for xs_batch, ys_batch in data_iter:
     #     print("xs shape %s dtype %s; ys shape %s dtype %s" %
     #           (xs_batch.shape, xs_batch.dtype, ys_batch.shape, ys_batch.dtype))
+
+    # Test MnistDataIter
+    data_root = os.path.join(os.path.expanduser('~'), 'data/mnist')
+    mnist = MnistDataIter(data_root, 'train', batch_size=128)
+    for xs_batch, ys_batch in mnist:
+        print("xs shape %s dtype %s; ys shape %s dtype %s" %
+              (xs_batch.shape, xs_batch.dtype, ys_batch.shape, ys_batch.dtype))
