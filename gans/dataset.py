@@ -107,7 +107,7 @@ class NDArrayIter(DataIter):
             else:
                 raise ValueError("ndim(labels): {} > 3".format(np.ndim(labels)))
         else:
-            # No not perform any operation on labels
+            # Do not perform any operation on labels
             self.labels = labels
         self.labels = np.array(self.labels).astype(labels_dtype)
 
@@ -175,7 +175,7 @@ class MnistDataIter(NDArrayIter):
                 labels = labels[8:].reshape((10000))
             return data, labels
 
-        # read from mnist file
+        # Read from mnist file
         if dataset == 'train':
             data, labels = load_train(root_dir)
         elif dataset == 'test':
@@ -188,7 +188,7 @@ class MnistDataIter(NDArrayIter):
         else:
             raise ValueError("dataset must be 'train' or 'test'")
 
-        # scale 255. to 1.
+        # Scale 255. to 1.
         data = data / 255.
 
         super(MnistDataIter, self).__init__(data,
@@ -240,7 +240,7 @@ class FixedShapeImageIter(DataIter):
         with open(file_list, 'r') as f:
             reader = csv.reader(f)
             for im_name, im_class in reader:
-                # read image
+                # Read image
                 im_rgb = skimage.data.imread(os.path.join(im_path, im_name))
 
                 # 4d -> 3d
@@ -250,19 +250,19 @@ class FixedShapeImageIter(DataIter):
                     # remove alpha channel
                     im_rgb = im_rgb[:, :, :3]
 
-                # reshape
+                # Reshape
                 im_rgb = skimage.transform.resize(im_rgb,
                                                   (height, width, channel),
                                                   preserve_range=True)
                 im_rgb = im_rgb.astype(np.uint8)
 
-                # expand dim to NHWC
+                # Expand dim to NHWC
                 im_rgb = np.expand_dims(im_rgb, 0)
 
-                # read label
+                # Read label
                 im_class = int(im_class)
 
-                # append to memory
+                # Append to memory
                 self.xs = np.concatenate((self.xs, im_rgb))
                 self.ys.append(im_class)
 
