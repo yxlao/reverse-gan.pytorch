@@ -44,7 +44,7 @@ class NDArrayIter(DataIter):
                  batch_size=1,
                  to_one_hot=False,
                  num_classes=None,
-                 loop_over_batch=False,
+                 wrap_around=False,
                  shuffle_data=True,
                  data_dtype=np.float32,
                  labels_dtype=np.int32):
@@ -62,8 +62,8 @@ class NDArrayIter(DataIter):
             to_one_hot: Convert to one_hot if original dataset is not one-hot
                         encoded.
             num_classes: Number of classes, needed if to_one_hot is true.
-            loop_over_batch: Loop-over last batch to contain data from beginning
-                             to make sure all batch will have size batch_size.
+            wrap_around: Loop-over last batch to contain data from beginning
+                         to make sure all batch will have size batch_size.
             data_dtype: Returned datase dtype.
             labels_dtype: Returned labels dtype.
 
@@ -76,12 +76,14 @@ class NDArrayIter(DataIter):
             raise ValueError("Error: len(data) == 0.")
         if len(data) != len(labels):
             raise ValueError("Error: len(data) != len(labels).")
-        if loop_over_batch:
-            raise NotImplementedError("Loop over batch not implemented.")
 
         # Set dataset info
         self.num_samples = len(data)
         self.num_classes = num_classes
+        if batch_size > self.num_samples:
+            raise ValueError(
+                "batch_size {} is larger than number of samples{}".format(
+                    batch_size, self.num_samples))
 
         # Data
         self.data = np.array(data).astype(data_dtype)
@@ -113,7 +115,7 @@ class NDArrayIter(DataIter):
 
         # Set parameters
         self.to_one_hot = to_one_hot
-        self.loop_over_batch = loop_over_batch
+        self.wrap_around = wrap_around
         self.shuffle_data = shuffle_data
         if batch_size == 0 or batch_size == -1:
             self.batch_size = self.num_samples
@@ -126,12 +128,28 @@ class NDArrayIter(DataIter):
 
     def next(self):
         if self.start_idx >= self.num_samples:
+            self.reset()
             raise StopIteration
         else:
+            # Read current batch data
             end_idx = self.start_idx + self.batch_size
             batch_data = self.data[self.start_idx:end_idx]
             batch_labels = self.labels[self.start_idx:end_idx]
+
+            # Handle wrap around
+            if self.wrap_around and end_idx >= self.num_samples:
+                num_wrap = end_idx - self.num_samples
+                wrap_data = self.data[0:num_wrap]
+                wrap_labels = self.labels[0:num_wrap]
+                batch_data = np.concatenate((batch_data, wrap_data), axis=0)
+                batch_labels = np.concatenate((batch_labels, wrap_labels),
+                                              axis=0)
+                assert len(batch_data) == len(batch_labels) == self.batch_size
+
+            # Set start index for next batch
             self.start_idx = end_idx
+
+            # Return
             return (batch_data, batch_labels)
 
     def reset(self):
@@ -146,7 +164,7 @@ class MnistDataIter(NDArrayIter):
                  dataset,
                  batch_size=1,
                  to_one_hot=True,
-                 loop_over_batch=False,
+                 wrap_around=True,
                  shuffle_data=True,
                  data_dtype=np.float32,
                  labels_dtype=np.int32):
@@ -196,7 +214,7 @@ class MnistDataIter(NDArrayIter):
                                             batch_size=batch_size,
                                             to_one_hot=to_one_hot,
                                             num_classes=10,
-                                            loop_over_batch=loop_over_batch,
+                                            wrap_around=wrap_around,
                                             shuffle_data=shuffle_data,
                                             data_dtype=data_dtype,
                                             labels_dtype=labels_dtype)
@@ -205,7 +223,7 @@ class MnistDataIter(NDArrayIter):
 class FixedShapeImageIter(DataIter):
     def __init__(self, file_list, im_path, width, height, channel,
                  batch_size=1, to_one_hot=False,
-                 loop_over_batch=False, shuffle_data=True,
+                 wrap_around=False, shuffle_data=True,
                  data_dtype=np.float32, labels_dtype=np.int32):
         """Image ndarray iterator
 
@@ -224,8 +242,8 @@ class FixedShapeImageIter(DataIter):
                         -1, then use all data (no batch).
             to_one_hot: Convert to one_hot if original dataset is not one-hot
                         encoded.
-            loop_over_batch: Loop-over last batch to contain data from beginning
-                             to make sure all batch will have size batch_size.
+            wrap_around: Loop-over last batch to contain data from beginning
+                         to make sure all batch will have size batch_size.
             data_dtype: Returned datase dtype.
             labels_dtype: Returned labels dtype.
 
@@ -270,7 +288,7 @@ class FixedShapeImageIter(DataIter):
         self.data_iter = NDArrayIter(self.xs, self.ys,
                                      batch_size=batch_size,
                                      to_one_hot=to_one_hot,
-                                     loop_over_batch=loop_over_batch,
+                                     wrap_around=wrap_around,
                                      shuffle_data=shuffle_data,
                                      data_dtype=data_dtype,
                                      labels_dtype=labels_dtype)
