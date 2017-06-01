@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import time
+import os
 from dataset import MnistDataIter
 
 # from http://wiseodd.github.io/techblog/2016/09/17/gan-tensorflow/
@@ -99,7 +100,15 @@ G_solver = tf.train.AdamOptimizer().minimize(G_loss, var_list=theta_G)
 # setups
 mb_size = 128
 Z_dim = 100
-mnist = MnistDataIter('/mnt/data/mnist/', 'all', batch_size=128)
+
+
+# custom dataloader
+# mnist = MnistDataIter('/mnt/data/mnist/', 'all', batch_size=128)
+
+# tf's dataloader
+mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
+if not os.path.exists('out/'):
+    os.makedirs('out/')
 
 # init
 sess = tf.Session()
@@ -118,8 +127,12 @@ for it in range(1000000):
         i += 1
         plt.close(fig)
 
-    X_mb, y_mb = mnist.next()
-    X_mb = X_mb.reshape((-1, 784))
+    # custom dataloader
+    # X_mb, y_mb = mnist.next()
+    # X_mb = X_mb.reshape((-1, 784))
+
+    # tf's dataloader
+    X_mb, _ = mnist.train.next_batch(mb_size)
 
     _, D_loss_curr = sess.run([D_solver, D_loss],
                               feed_dict={X: X_mb, Z: sample_Z(mb_size, Z_dim)})
