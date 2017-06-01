@@ -45,6 +45,7 @@ class NDArrayIter(DataIter):
                  to_one_hot=False,
                  num_classes=None,
                  wrap_around=False,
+                 infinite=False,
                  shuffle_data=True,
                  data_dtype=np.float32,
                  labels_dtype=np.int32):
@@ -57,13 +58,16 @@ class NDArrayIter(DataIter):
                     otherwise should be (num_samples, ) with integer class label
                     with 0-index. Only expect 1d or 2d labels.
             batch_size: Batch size. If num_samples % batch_size != 0, then
-                        the last batch will be smaller. If batch_size == 0 or 
+                        the last batch will be smaller. If batch_size == 0 or
                         -1, then use all data (no batch).
             to_one_hot: Convert to one_hot if original dataset is not one-hot
                         encoded.
             num_classes: Number of classes, needed if to_one_hot is true.
             wrap_around: Loop-over last batch to contain data from beginning
                          to make sure all batch will have size batch_size.
+            infinite: If True, then sample from the dataset continuously.
+                      Usually, it's recommended that shuffle_data shall also be
+                      True if infinite is True.
             data_dtype: Returned datase dtype.
             labels_dtype: Returned labels dtype.
 
@@ -121,6 +125,7 @@ class NDArrayIter(DataIter):
             self.batch_size = self.num_samples
         else:
             self.batch_size = batch_size
+        self.infinite = infinite
 
         # Set states
         self.start_idx = 0
@@ -129,7 +134,10 @@ class NDArrayIter(DataIter):
     def next(self):
         if self.start_idx >= self.num_samples:
             self.reset()
-            raise StopIteration
+            if self.infinite:
+                return self.next()
+            else:
+                 raise StopIteration
         else:
             # Read current batch data
             end_idx = self.start_idx + self.batch_size
@@ -165,6 +173,7 @@ class MnistDataIter(NDArrayIter):
                  batch_size=1,
                  to_one_hot=True,
                  wrap_around=True,
+                 infinite=True,
                  shuffle_data=True,
                  data_dtype=np.float32,
                  labels_dtype=np.int32):
@@ -215,6 +224,7 @@ class MnistDataIter(NDArrayIter):
                                             to_one_hot=to_one_hot,
                                             num_classes=10,
                                             wrap_around=wrap_around,
+                                            infinite=infinite,
                                             shuffle_data=shuffle_data,
                                             data_dtype=data_dtype,
                                             labels_dtype=labels_dtype)
@@ -238,7 +248,7 @@ class FixedShapeImageIter(DataIter):
             height: The heights to resize image
             channel: The input channel
             batch_size: Batch size. If num_samples % batch_size != 0, then
-                        the last batch will be smaller. If batch_size == 0 or 
+                        the last batch will be smaller. If batch_size == 0 or
                         -1, then use all data (no batch).
             to_one_hot: Convert to one_hot if original dataset is not one-hot
                         encoded.
