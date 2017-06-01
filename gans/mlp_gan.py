@@ -3,7 +3,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import os
+import time
 from dataset import MnistDataIter
 
 # from http://wiseodd.github.io/techblog/2016/09/17/gan-tensorflow/
@@ -107,8 +107,10 @@ sess.run(tf.global_variables_initializer())
 
 # train and plot
 i = 0
+start_time = time.time()
 for it in range(1000000):
     if it % 1000 == 0:
+        # plot sample
         samples = sess.run(G_sample, feed_dict={Z: sample_Z(16, Z_dim)})
 
         fig = plot(samples)
@@ -128,4 +130,6 @@ for it in range(1000000):
         print('Iter: {}'.format(it))
         print('D loss: {:.4}'.format(D_loss_curr))
         print('G_loss: {:.4}'.format(G_loss_curr))
+        print('time: {}s'.format(time.time() - start_time))
         print()
+        start_time = time.time()
