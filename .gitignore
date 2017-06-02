@@ -1,3 +1,9 @@
+# Images
+*.png
+
+# Pytorch lmdb cache
+_cache__*
+
 # out
 out/
 
