@@ -39,7 +39,7 @@ parser.add_argument('--netG', default='',
                     help="path to netG (to continue training)")
 parser.add_argument('--netD', default='',
                     help="path to netD (to continue training)")
-parser.add_argument('--outf', default='.',
+parser.add_argument('--outf', default='dcgan_out',
                     help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 
