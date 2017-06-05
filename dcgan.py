@@ -60,9 +60,9 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-class _netG(nn.Module):
+class NetG(nn.Module):
     def __init__(self, ngpu, nz, ngf, nc):
-        super(_netG, self).__init__()
+        super(NetG, self).__init__()
         self.ngpu = ngpu
         # torch.nn.ConvTranspose2d(in_channels, out_channels, kernel_size,
         #                          stride=1, padding=0, output_padding=0,
@@ -99,9 +99,9 @@ class _netG(nn.Module):
         return output
 
 
-class _netD(nn.Module):
+class NetD(nn.Module):
     def __init__(self, ngpu, ndf, nc):
-        super(_netD, self).__init__()
+        super(NetD, self).__init__()
         self.ngpu = ngpu
         self.main = nn.Sequential(
             # input is (nc) x 64 x 64: [64, 3, 64, 64]
@@ -165,14 +165,14 @@ def main():
     dataloader = get_dataloader(opt)
 
     # init netG
-    netG = _netG(ngpu, nz, ngf, nc)
+    netG = NetG(ngpu, nz, ngf, nc)
     netG.apply(weights_init)
     if opt.netG != '':
         netG.load_state_dict(torch.load(opt.netG))
     print(netG)
 
     # init netD
-    netD = _netD(ngpu, ndf, nc)
+    netD = NetD(ngpu, ndf, nc)
     netD.apply(weights_init)
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
