@@ -186,6 +186,7 @@ if __name__ == '__main__':
     real_label = 1
     fake_label = 0
 
+    # copy to gpu if cuda enabled
     if opt.cuda:
         netD.cuda()
         netG.cuda()
@@ -193,6 +194,7 @@ if __name__ == '__main__':
         input, label = input.cuda(), label.cuda()
         noise, fixed_noise = noise.cuda(), fixed_noise.cuda()
 
+    # convert tensors to variables for autodiff
     input = Variable(input)
     label = Variable(label)
     noise = Variable(noise)
@@ -248,15 +250,18 @@ if __name__ == '__main__':
             D_G_z2 = output.data.mean()
             optimizerG.step()
 
+            # print costs
             print('[%d/%d][%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f '
                   'D(G(z)): %.4f / %.4f'
                   % (epoch, opt.niter, i, len(dataloader),
                      errD.data[0], errG.data[0], D_x, D_G_z1, D_G_z2))
 
+            # save initial real samples
             if epoch == 0 and i == 0:
-                vutils.save_image(real_cpu,
-                                  '%s/real_samples.png' % opt.outf,
+                vutils.save_image(real_cpu, '%s/real_samples.png' % opt.outf,
                                   normalize=True)
+
+            # save
             if i % 500 == 0:
                 fake = netG(fixed_noise)
                 vutils.save_image(fake.data,
@@ -265,8 +270,7 @@ if __name__ == '__main__':
                                   normalize=True)
 
                 curr_time = time.time()
-                print(
-                    'Time elapsed save_image: %.2f' % (curr_time - start_time))
+                print('Time elapsed: %.2f' % (curr_time - start_time))
                 start_time = curr_time
 
         # do checkpointing
