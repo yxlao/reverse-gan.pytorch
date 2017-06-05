@@ -132,7 +132,7 @@ class _netD(nn.Module):
         return output.view(-1, 1)
 
 
-if __name__ == '__main__':
+def main():
     # process arguments
     if torch.cuda.is_available() and not opt.cuda:
         print("WARNING: You have a CUDA device, so you should probably run "
@@ -278,3 +278,9 @@ if __name__ == '__main__':
                    '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
         torch.save(netD.state_dict(),
                    '%s/netD_epoch_%d.pth' % (opt.outf, epoch))
+
+
+if __name__ == '__main__':
+    import cProfile
+    cProfile.run('main()')
+    # main()
