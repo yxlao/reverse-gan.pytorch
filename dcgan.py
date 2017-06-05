@@ -8,11 +8,10 @@ import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
 import torch.utils.data
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
 import torchvision.utils as vutils
 import time
 from torch.autograd import Variable
+from dataset import get_dataloader
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', required=True,
@@ -63,41 +62,8 @@ if opt.cuda:
 cudnn.benchmark = True
 
 if torch.cuda.is_available() and not opt.cuda:
-    print(
-        "WARNING: You have a CUDA device, so you should probably run with --cuda")
-
-if opt.dataset in ['imagenet', 'folder', 'lfw']:
-    # folder dataset
-    dataset = dset.ImageFolder(root=opt.dataroot,
-                               transform=transforms.Compose([
-                                   transforms.Scale(opt.imageSize),
-                                   transforms.CenterCrop(opt.imageSize),
-                                   transforms.ToTensor(),
-                                   transforms.Normalize((0.5, 0.5, 0.5),
-                                                        (0.5, 0.5, 0.5)),
-                               ]))
-elif opt.dataset == 'lsun':
-    dataset = dset.LSUN(db_path=opt.dataroot, classes=['bedroom_train'],
-                        transform=transforms.Compose([
-                            transforms.Scale(opt.imageSize),
-                            transforms.CenterCrop(opt.imageSize),
-                            transforms.ToTensor(),
-                            transforms.Normalize((0.5, 0.5, 0.5),
-                                                 (0.5, 0.5, 0.5)),
-                        ]))
-elif opt.dataset == 'cifar10':
-    dataset = dset.CIFAR10(root=opt.dataroot, download=True,
-                           transform=transforms.Compose([
-                               transforms.Scale(opt.imageSize),
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.5, 0.5, 0.5),
-                                                    (0.5, 0.5, 0.5)),
-                           ])
-                           )
-assert dataset
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
-                                         shuffle=True,
-                                         num_workers=int(opt.workers))
+    print("WARNING: You have a CUDA device, so you should probably run with "
+          "--cuda")
 
 ngpu = int(opt.ngpu)
 nz = int(opt.nz)
@@ -105,6 +71,7 @@ ngf = int(opt.ngf)
 ndf = int(opt.ndf)
 nc = 3
 
+dataloader = get_dataloader(opt)
 
 # custom weights initialization called on netG and netD
 def weights_init(m):
