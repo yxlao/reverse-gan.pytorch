@@ -12,7 +12,6 @@ import torchvision.utils as vutils
 import time
 from torch.autograd import Variable
 from dataset import get_dataloader
-import cProfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', required=True,
@@ -275,9 +274,6 @@ def main():
                 print('Time elapsed: %.2f' % (curr_time - start_time))
                 start_time = curr_time
 
-            if opt.profile and i == 500:
-                exit(0)
-
         # do checkpointing
         torch.save(netG.state_dict(),
                    '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
@@ -286,7 +282,5 @@ def main():
 
 
 if __name__ == '__main__':
-    if opt.profile:
-        cProfile.run('main()', 'cprofile.stats', 'cumulative')
-    else:
-        main()
+    # cProfile.run('main()', 'cprofile.stats', 'cumulative')
+    main()
