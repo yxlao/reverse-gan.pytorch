@@ -13,42 +13,6 @@ import time
 from torch.autograd import Variable
 from dataset import get_dataloader
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', required=True,
-                    help='cifar10 | lsun | imagenet | folder | lfw')
-parser.add_argument('--dataroot', required=True, help='path to dataset')
-parser.add_argument('--workers', type=int,
-                    help='number of data loading workers', default=20)
-parser.add_argument('--batchSize', type=int, default=64,
-                    help='input batch size')
-parser.add_argument('--imageScaleSize', type=int, default=98,
-                    help='scale the sorter of the height / width of the image')
-parser.add_argument('--imageSize', type=int, default=64,
-                    help='the height / width of the input image to network')
-parser.add_argument('--nz', type=int, default=100,
-                    help='size of the latent z vector')
-parser.add_argument('--ngf', type=int, default=64)
-parser.add_argument('--ndf', type=int, default=64)
-parser.add_argument('--niter', type=int, default=25,
-                    help='number of epochs to train for')
-parser.add_argument('--lr', type=float, default=0.0002,
-                    help='learning rate, default=0.0002')
-parser.add_argument('--beta1', type=float, default=0.5,
-                    help='beta1 for adam. default=0.5')
-parser.add_argument('--cuda', action='store_true', help='enables cuda')
-parser.add_argument('--ngpu', type=int, default=1, help='number of GPUs to use')
-parser.add_argument('--netG', default='',
-                    help="path to netG (to continue training)")
-parser.add_argument('--netD', default='',
-                    help="path to netD (to continue training)")
-parser.add_argument('--outf', default='dcgan_out',
-                    help='folder to output images and model checkpoints')
-parser.add_argument('--manualSeed', type=int, help='manual seed')
-parser.add_argument('--profile', action='store_true', help='enable cProfile')
-
-opt = parser.parse_args()
-print(opt)
-
 
 # custom weights initialization called on netG and netD
 def weights_init(m):
@@ -135,7 +99,7 @@ class NetD(nn.Module):
         return output.view(-1, 1)
 
 
-def main():
+def main(opt):
     # process arguments
     if torch.cuda.is_available() and not opt.cuda:
         print("WARNING: You have a CUDA device, so you should probably run "
@@ -284,5 +248,43 @@ def main():
 
 
 if __name__ == '__main__':
-    # cProfile.run('main()', 'cprofile.stats', 'cumulative')
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', required=True,
+                        help='cifar10 | lsun | imagenet | folder | lfw')
+    parser.add_argument('--dataroot', required=True, help='path to dataset')
+    parser.add_argument('--workers', type=int,
+                        help='number of data loading workers', default=20)
+    parser.add_argument('--batchSize', type=int, default=64,
+                        help='input batch size')
+    parser.add_argument('--imageScaleSize', type=int, default=98,
+                        help='scale the sorter of the height / width of the image')
+    parser.add_argument('--imageSize', type=int, default=64,
+                        help='the height / width of the input image to network')
+    parser.add_argument('--nz', type=int, default=100,
+                        help='size of the latent z vector')
+    parser.add_argument('--ngf', type=int, default=64)
+    parser.add_argument('--ndf', type=int, default=64)
+    parser.add_argument('--niter', type=int, default=25,
+                        help='number of epochs to train for')
+    parser.add_argument('--lr', type=float, default=0.0002,
+                        help='learning rate, default=0.0002')
+    parser.add_argument('--beta1', type=float, default=0.5,
+                        help='beta1 for adam. default=0.5')
+    parser.add_argument('--cuda', action='store_true', help='enables cuda')
+    parser.add_argument('--ngpu', type=int, default=1,
+                        help='number of GPUs to use')
+    parser.add_argument('--netG', default='',
+                        help="path to netG (to continue training)")
+    parser.add_argument('--netD', default='',
+                        help="path to netD (to continue training)")
+    parser.add_argument('--outf', default='dcgan_out',
+                        help='folder to output images and model checkpoints')
+    parser.add_argument('--manualSeed', type=int, help='manual seed')
+    parser.add_argument('--profile', action='store_true',
+                        help='enable cProfile')
+
+    opt = parser.parse_args()
+    print(opt)
+
+    # cProfile.run('main(opt)', 'cprofile.stats', 'cumulative')
+    main(opt)
