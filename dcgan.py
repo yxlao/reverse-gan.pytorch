@@ -12,13 +12,14 @@ import torchvision.utils as vutils
 import time
 from torch.autograd import Variable
 from dataset import get_dataloader
+import cProfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', required=True,
                     help='cifar10 | lsun | imagenet | folder | lfw')
 parser.add_argument('--dataroot', required=True, help='path to dataset')
 parser.add_argument('--workers', type=int,
-                    help='number of data loading workers', default=2)
+                    help='number of data loading workers', default=5)
 parser.add_argument('--batchSize', type=int, default=64,
                     help='input batch size')
 parser.add_argument('--imageSize', type=int, default=64,
@@ -42,9 +43,16 @@ parser.add_argument('--netD', default='',
 parser.add_argument('--outf', default='dcgan_out',
                     help='folder to output images and model checkpoints')
 parser.add_argument('--manualSeed', type=int, help='manual seed')
+parser.add_argument('--profile', action='store_true', help='enable cProfile')
 
 opt = parser.parse_args()
 print(opt)
+
+ngpu = int(opt.ngpu)
+nz = int(opt.nz)
+ngf = int(opt.ngf)
+ndf = int(opt.ndf)
+nc = 3
 
 
 # custom weights initialization called on netG and netD
@@ -151,12 +159,6 @@ def main():
         torch.cuda.manual_seed_all(opt.manualSeed)
 
     cudnn.benchmark = True
-
-    ngpu = int(opt.ngpu)
-    nz = int(opt.nz)
-    ngf = int(opt.ngf)
-    ndf = int(opt.ndf)
-    nc = 3
 
     # dataloader
     dataloader = get_dataloader(opt)
@@ -273,6 +275,9 @@ def main():
                 print('Time elapsed: %.2f' % (curr_time - start_time))
                 start_time = curr_time
 
+            if opt.profile and i == 200:
+                exit(0)
+
         # do checkpointing
         torch.save(netG.state_dict(),
                    '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
@@ -281,6 +286,7 @@ def main():
 
 
 if __name__ == '__main__':
-    import cProfile
-    cProfile.run('main()')
-    # main()
+    if opt.profile:
+        cProfile.run('main()', 'cprofile.stats', 'cumulative')
+    else:
+        main()
