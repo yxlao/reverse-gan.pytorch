@@ -11,6 +11,7 @@ import torch.utils.data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 import torchvision.utils as vutils
+import time
 from torch.autograd import Variable
 
 parser = argparse.ArgumentParser()
@@ -228,6 +229,9 @@ fixed_noise = Variable(fixed_noise)
 optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
 
+# time
+start_time = time.time()
+
 for epoch in range(opt.niter):
     for i, data in enumerate(dataloader, 0):
         ############################
@@ -277,12 +281,16 @@ for epoch in range(opt.niter):
             vutils.save_image(real_cpu,
                               '%s/real_samples.png' % opt.outf,
                               normalize=True)
-        if i % 1000 == 0:
+        if i % 500 == 0:
             fake = netG(fixed_noise)
             vutils.save_image(fake.data,
                               '%s/fake_samples_epoch_%03d_iter_%03d.png' % (
                               opt.outf, epoch, i),
                               normalize=True)
+
+            curr_time = time.time()
+            print('Time elapsed save_image: %.2f' % (curr_time - start_time))
+            start_time = curr_time
 
     # do checkpointing
     torch.save(netG.state_dict(), '%s/netG_epoch_%d.pth' % (opt.outf, epoch))
