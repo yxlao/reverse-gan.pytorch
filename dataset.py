@@ -9,7 +9,7 @@ def get_dataloader(opt):
         # folder dataset
         dataset = dset.ImageFolder(root=opt.dataroot,
                                    transform=transforms.Compose([
-                                       transforms.Scale(opt.imageSize),
+                                       transforms.Scale(opt.imageScaleSize),
                                        transforms.CenterCrop(opt.imageSize),
                                        transforms.ToTensor(),
                                        transforms.Normalize((0.5, 0.5, 0.5),
@@ -18,7 +18,7 @@ def get_dataloader(opt):
     elif opt.dataset == 'lsun':
         dataset = dset.LSUN(db_path=opt.dataroot, classes=['bedroom_train'],
                             transform=transforms.Compose([
-                                transforms.Scale(opt.imageSize),
+                                transforms.Scale(opt.imageScaleSize),
                                 transforms.CenterCrop(opt.imageSize),
                                 transforms.ToTensor(),
                                 transforms.Normalize((0.5, 0.5, 0.5),
