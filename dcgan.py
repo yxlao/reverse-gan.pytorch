@@ -263,7 +263,7 @@ def main():
                                   normalize=True)
 
             # save
-            if i % 500 == 0:
+            if i % 1000 == 0:
                 fake = netG(fixed_noise)
                 vutils.save_image(fake.data,
                                   '%s/fake_samples_epoch_%03d_iter_%03d.png' % (
