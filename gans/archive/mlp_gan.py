@@ -1,11 +1,12 @@
+import os
+import time
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import time
-import os
-from dataset import MnistDataIter
+
 
 # from http://wiseodd.github.io/techblog/2016/09/17/gan-tensorflow/
 
