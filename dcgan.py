@@ -49,12 +49,6 @@ parser.add_argument('--profile', action='store_true', help='enable cProfile')
 opt = parser.parse_args()
 print(opt)
 
-ngpu = int(opt.ngpu)
-nz = int(opt.nz)
-ngf = int(opt.ngf)
-ndf = int(opt.ndf)
-nc = 3
-
 
 # custom weights initialization called on netG and netD
 def weights_init(m):
@@ -67,7 +61,7 @@ def weights_init(m):
 
 
 class _netG(nn.Module):
-    def __init__(self, ngpu):
+    def __init__(self, ngpu, nz, ngf, nc):
         super(_netG, self).__init__()
         self.ngpu = ngpu
         # torch.nn.ConvTranspose2d(in_channels, out_channels, kernel_size,
@@ -106,7 +100,7 @@ class _netG(nn.Module):
 
 
 class _netD(nn.Module):
-    def __init__(self, ngpu):
+    def __init__(self, ngpu, ndf, nc):
         super(_netD, self).__init__()
         self.ngpu = ngpu
         self.main = nn.Sequential(
@@ -161,18 +155,24 @@ def main():
 
     cudnn.benchmark = True
 
+    ngpu = int(opt.ngpu)
+    nz = int(opt.nz)
+    ngf = int(opt.ngf)
+    ndf = int(opt.ndf)
+    nc = 3
+
     # dataloader
     dataloader = get_dataloader(opt)
 
     # init netG
-    netG = _netG(ngpu)
+    netG = _netG(ngpu, nz, ngf, nc)
     netG.apply(weights_init)
     if opt.netG != '':
         netG.load_state_dict(torch.load(opt.netG))
     print(netG)
 
     # init netD
-    netD = _netD(ngpu)
+    netD = _netD(ngpu, ndf, nc)
     netD.apply(weights_init)
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
