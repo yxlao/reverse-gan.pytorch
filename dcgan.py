@@ -195,7 +195,12 @@ def main(opt):
 
             # train with fake
             noise.data.resize_(batch_size, nz, 1, 1)
-            noise.data.normal_(0, 1)
+            if opt.z_distribution is 'uniform':
+                noise.data.uniform_(-1, 1)
+            elif opt.z_distribution is 'normal':
+                noise.data.normal_(0, 1)
+            else:
+                raise ValueError('opt.z_distribution must be normal | uniform')
             fake = netG(noise)
             label.data.fill_(fake_label)
             output = netD(fake.detach())
@@ -209,8 +214,8 @@ def main(opt):
             # (2) Update G network: maximize log(D(G(z)))
             ###########################
             netG.zero_grad()
-            label.data.fill_(
-                real_label)  # fake labels are real for generator cost
+            # fake labels are real for generator cost
+            label.data.fill_(real_label)
             output = netD(fake)
             errG = criterion(output, label)
             errG.backward()
@@ -260,6 +265,8 @@ if __name__ == '__main__':
                         help='scale the sorter of the height / width of the image')
     parser.add_argument('--imageSize', type=int, default=64,
                         help='the height / width of the input image to network')
+    parser.add_argument('--z_distribution', default='uniform',
+                        help='uniform | normal')
     parser.add_argument('--nz', type=int, default=100,
                         help='size of the latent z vector')
     parser.add_argument('--ngf', type=int, default=64)
