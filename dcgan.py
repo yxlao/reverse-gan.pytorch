@@ -117,26 +117,20 @@ def train(opt):
     if opt.cuda:
         torch.cuda.manual_seed_all(opt.manualSeed)
 
-    cudnn.benchmark = True
-
-    ngpu = int(opt.ngpu)
-    nz = int(opt.nz)
-    ngf = int(opt.ngf)
-    ndf = int(opt.ndf)
-    nc = 3
+    cudnn.benchmark = True  # turn on the cudnn autotuner
 
     # dataloader
     dataloader = get_dataloader(opt)
 
     # init netG
-    netG = NetG(ngpu, nz, ngf, nc)
+    netG = NetG(opt.ngpu, opt.nz, opt.ngf, opt.nc)
     netG.apply(weights_init)
     if opt.netG != '':
         netG.load_state_dict(torch.load(opt.netG))
     print(netG)
 
     # init netD
-    netD = NetD(ngpu, ndf, nc)
+    netD = NetD(opt.ngpu, opt.ndf, opt.nc)
     netD.apply(weights_init)
     if opt.netD != '':
         netD.load_state_dict(torch.load(opt.netD))
@@ -147,8 +141,8 @@ def train(opt):
 
     # placeholders for loading data
     input = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)
-    noise = torch.FloatTensor(opt.batchSize, nz, 1, 1)
-    fixed_noise = torch.FloatTensor(opt.batchSize, nz, 1, 1).normal_(0, 1)
+    noise = torch.FloatTensor(opt.batchSize, opt.nz, 1, 1)
+    fixed_noise = torch.FloatTensor(opt.batchSize, opt.nz, 1, 1).normal_(0, 1)
     label = torch.FloatTensor(opt.batchSize)
     real_label = 1
     fake_label = 0
@@ -194,7 +188,7 @@ def train(opt):
             D_x = output.data.mean()
 
             # train with fake
-            noise.data.resize_(batch_size, nz, 1, 1)
+            noise.data.resize_(batch_size, opt.nz, 1, 1)
             if opt.z_distribution is 'uniform':
                 noise.data.uniform_(-1, 1)
             elif opt.z_distribution is 'normal':
@@ -269,6 +263,8 @@ if __name__ == '__main__':
                         help='uniform | normal')
     parser.add_argument('--nz', type=int, default=100,
                         help='size of the latent z vector')
+    parser.add_argument('--nc', type=int, default=3,
+                        help='number of channels in the generated image')
     parser.add_argument('--ngf', type=int, default=64)
     parser.add_argument('--ndf', type=int, default=64)
     parser.add_argument('--niter', type=int, default=25,
