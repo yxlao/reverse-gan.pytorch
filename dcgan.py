@@ -99,7 +99,7 @@ class NetD(nn.Module):
         return output.view(-1, 1)
 
 
-def main(opt):
+def train(opt):
     # process arguments
     if torch.cuda.is_available() and not opt.cuda:
         print("WARNING: You have a CUDA device, so you should probably run "
@@ -292,6 +292,4 @@ if __name__ == '__main__':
 
     opt = parser.parse_args()
     print(opt)
-
-    # cProfile.run('main(opt)', 'cprofile.stats', 'cumulative')
-    main(opt)
+    train(opt)
