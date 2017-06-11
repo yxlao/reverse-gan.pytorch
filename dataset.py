@@ -34,7 +34,7 @@ def get_dataloader(opt):
                                ])
                                )
     assert dataset
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batchSize,
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batch_size,
                                              shuffle=True,
                                              num_workers=int(opt.workers))
     return dataloader

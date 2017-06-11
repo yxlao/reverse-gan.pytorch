@@ -17,46 +17,49 @@ import numpy as np
 from dcgan import NetG
 
 def reverse_gan(opt):
-    ngpu = 1
-    nz = 100
-    ngf = 64
-    nc = 3
-    batch_size = 1
-    cuda = True
-    z_distribution = 'uniform'
+    # process arguments
+    if torch.cuda.is_available() and not opt.cuda:
+        print("WARNING: You have a CUDA device, so you should probably run "
+              "with --cuda")
 
-    torch.cuda.set_device(0)
+    if opt.manualSeed is None:
+        opt.manualSeed = random.randint(1, 10000)
+    print("Random Seed: ", opt.manualSeed)
+    random.seed(opt.manualSeed)
+    torch.manual_seed(opt.manualSeed)
+    if opt.cuda:
+        torch.cuda.manual_seed_all(opt.manualSeed)
+        cudnn.benchmark = True  # turn on the cudnn autotuner
+        # torch.cuda.set_device(1)
 
-    # load netG
-    netG = NetG(ngpu, nz, ngf, nc)
+    # load netG and fix its weights
+    netG = NetG(opt.ngpu, opt.nz, opt.ngf, opt.nc)
     netG.load_state_dict(torch.load(opt.netG))
+    for param in netG.parameters():
+        param.requires_grad = False
 
-    # generate ground-truth noise
-    if z_distribution == 'uniform':
-        noise = torch.FloatTensor(batch_size, nz, 1, 1).uniform_(-1, 1)
-    elif z_distribution == 'normal':
-        noise = torch.FloatTensor(batch_size, nz, 1, 1).normal_(0, 1)
+    # init ground-truth z and z_approx
+    if opt.z_distribution == 'uniform':
+        noise = torch.FloatTensor(opt.batch_size, opt.nz, 1, 1).uniform_(-1, 1)
+        noise_approx = \
+            torch.FloatTensor(opt.batch_size, opt.nz, 1, 1).uniform_(-1, 1)
+    elif opt.z_distribution == 'normal':
+        noise = torch.FloatTensor(opt.batch_size, opt.nz, 1, 1).normal_(0, 1)
+        noise_approx = \
+            torch.FloatTensor(opt.batch_size, opt.nz, 1, 1).normal_(0, 1)
     else:
         raise ValueError()
     noise = Variable(noise)
-    noise.data.resize_(batch_size, nz, 1, 1)
-    noise.data.normal_(0, 1)
+    noise.data.resize_(opt.batch_size, opt.nz, 1, 1)
 
     for param in netG.parameters():
         param.requires_grad = False
 
     # fix fake, and try to find noise_approx
-    if z_distribution == 'uniform':
-        noise_approx = torch.FloatTensor(batch_size, nz, 1, 1).uniform_(-1, 1)
-    elif z_distribution == 'normal':
-        noise_approx = torch.FloatTensor(batch_size, nz, 1, 1).normal_(0, 1)
-    else:
-        raise ValueError()
-
     mse_loss = nn.MSELoss()
     mse_loss_ = nn.MSELoss()
 
-    if cuda:
+    if opt.cuda:
         netG.cuda()
         mse_loss.cuda()
         mse_loss_.cuda()
@@ -70,7 +73,7 @@ def reverse_gan(opt):
 
     optimizer_approx = optim.Adam([noise_approx], lr=0.01, betas=(opt.beta1, 0.999))
 
-    for i in range(100000):
+    for i in range(opt.niter):
         fake_approx = netG(noise_approx)
         mse_g_z = mse_loss(fake_approx, fake)
         mse_z = mse_loss_(noise_approx, noise)
@@ -95,6 +98,11 @@ if __name__ == '__main__':
                         help='uniform | normal')
     parser.add_argument('--nz', type=int, default=100,
                         help='size of the latent z vector')
+    parser.add_argument('--nc', type=int, default=3,
+                        help='number of channels in the generated image')
+    parser.add_argument('--batch_size', type=int, default=1,
+                        help='input batch size, should be 1 since we reverse '
+                             'single images')
     parser.add_argument('--ngf', type=int, default=64)
     parser.add_argument('--niter', type=int, default=100000,
                         help='number of epochs to train for')
@@ -103,6 +111,8 @@ if __name__ == '__main__':
     parser.add_argument('--beta1', type=float, default=0.5,
                         help='beta1 for adam. default=0.5')
     parser.add_argument('--cuda', action='store_true', help='enables cuda')
+    parser.add_argument('--ngpu', type=int, default=1,
+                        help='number of GPUs to use')
     parser.add_argument('--netG', default='dcgan_out/netG_epoch_10.pth',
                         help="path to netG (to continue training)")
     parser.add_argument('--outf', default='dcgan_out',

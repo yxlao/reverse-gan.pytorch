@@ -140,10 +140,10 @@ def train(opt):
     criterion = nn.BCELoss()
 
     # placeholders for loading data
-    input = torch.FloatTensor(opt.batchSize, 3, opt.imageSize, opt.imageSize)
-    noise = torch.FloatTensor(opt.batchSize, opt.nz, 1, 1)
-    fixed_noise = torch.FloatTensor(opt.batchSize, opt.nz, 1, 1).normal_(0, 1)
-    label = torch.FloatTensor(opt.batchSize)
+    input = torch.FloatTensor(opt.batch_size, 3, opt.imageSize, opt.imageSize)
+    noise = torch.FloatTensor(opt.batch_size, opt.nz, 1, 1)
+    fixed_noise = torch.FloatTensor(opt.batch_size, opt.nz, 1, 1).normal_(0, 1)
+    label = torch.FloatTensor(opt.batch_size)
     real_label = 1
     fake_label = 0
 
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataroot', required=True, help='path to dataset')
     parser.add_argument('--workers', type=int,
                         help='number of data loading workers', default=20)
-    parser.add_argument('--batchSize', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=64,
                         help='input batch size')
     parser.add_argument('--imageScaleSize', type=int, default=98,
                         help='scale the sorter of the height / width of the image')
