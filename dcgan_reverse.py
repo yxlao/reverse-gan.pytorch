@@ -76,7 +76,6 @@ def reverse_z(netG, g_z, z, opt, clip='disabled'):
             z_approx.data[z_approx.data > 1] = random.uniform(-1, 1)
             z_approx.data[z_approx.data < -1] = random.uniform(-1, 1)
 
-
     # save g(z_approx) image
     vutils.save_image(g_z_approx.data, 'g_z_approx.png', normalize=True)
 
