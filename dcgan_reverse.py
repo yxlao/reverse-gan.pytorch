@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from dcgan import NetG
 
 
-def reverse_z(netG, g_z, z, opt):
+def reverse_z(netG, g_z, z, opt, clip='disabled'):
     """
     Estimate z_approx given G and G(z).
 
@@ -25,6 +25,9 @@ def reverse_z(netG, g_z, z, opt):
     Returns:
         Variable, z_approx, the estimated z value.
     """
+    # sanity check
+    assert clip in ['disabled', 'standard', 'stochastic']
+
     # loss metrics
     mse_loss = nn.MSELoss()
     mse_loss_ = nn.MSELoss()
@@ -65,8 +68,19 @@ def reverse_z(netG, g_z, z, opt):
         mse_g_z.backward()
         optimizer_approx.step()
 
+        # clipping
+        if clip == 'standard':
+            z_approx.data[z_approx.data > 1] = 1
+            z_approx.data[z_approx.data < -1] = -1
+        if clip == 'stochastic':
+            z_approx.data[z_approx.data > 1] = random.uniform(-1, 1)
+            z_approx.data[z_approx.data < -1] = random.uniform(-1, 1)
+
+
     # save g(z_approx) image
     vutils.save_image(g_z_approx.data, 'g_z_approx.png', normalize=True)
+
+    return z_approx
 
 
 def reverse_gan(opt):
@@ -96,8 +110,8 @@ def reverse_gan(opt):
     vutils.save_image(g_z.data, 'g_z.png', normalize=True)
     print(z.cpu().data.numpy().squeeze())
 
-    # recover z_approx from g_z
-    z_approx = reverse_z(netG, g_z, z, opt)
+    # recover z_approx from standard
+    z_approx = reverse_z(netG, g_z, z, opt, clip='stochastic')
     print(z_approx.cpu().data.numpy().squeeze())
 
 
