@@ -38,9 +38,11 @@ The following example uses the pre-trained model `pre_trained/netG_epoch_10.pth`
 on CelebA aligned dataset.
 
 `G(z)`: the generated image with `z`
+
 ![result](pre_trained/g_z.png)
 
 `G(z_approx)`: the generated image with the estimated `z_approx`
+
 ![result](pre_trained/g_z_approx.png)
 
 ## References
