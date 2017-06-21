@@ -21,7 +21,8 @@ def reverse_z(netG, g_z, z, opt, clip='disabled'):
         g_z: Variable, G(z).
         opt: argparse.Namespace, network and training options.
         z: Variable, the ground truth z, ref only here, not used in recovery.
-
+        clip: Although clip could come from of `opt.clip`, here we keep it
+              to be more explicit.
     Returns:
         Variable, z_approx, the estimated z value.
     """
@@ -110,12 +111,14 @@ def reverse_gan(opt):
     print(z.cpu().data.numpy().squeeze())
 
     # recover z_approx from standard
-    z_approx = reverse_z(netG, g_z, z, opt, clip='stochastic')
+    z_approx = reverse_z(netG, g_z, z, opt, clip=opt.clip)
     print(z_approx.cpu().data.numpy().squeeze())
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--clip', default='stochastic',
+                        help='disabled|standard|stochastic')
     parser.add_argument('--z_distribution', default='uniform',
                         help='uniform | normal')
     parser.add_argument('--nz', type=int, default=100,
@@ -123,7 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('--nc', type=int, default=3,
                         help='number of channels in the generated image')
     parser.add_argument('--ngf', type=int, default=64)
-    parser.add_argument('--niter', type=int, default=10000,
+    parser.add_argument('--niter', type=int, default=5000,
                         help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=0.01,
                         help='learning rate, default=0.0002')
